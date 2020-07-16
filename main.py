@@ -54,9 +54,9 @@ async def getResponse(request:Request):
     except ValueError:
         return "Data Not Received"
     try:
-        if req_data['merged'] == "true":
+        if req_data['pull_request']['merged'] == "true":
            makeResponse(req_data,req_data['number'])
     except KeyError:
-        return "Not a PR Hook"
+        return "Merge Key not found, Not a PR Merge ßHook"
     else:
         return "Not Found"
