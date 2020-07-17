@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from typing import Dict
 import yaml
 import os
+import logging
 import requests
 import base64
 
@@ -13,7 +14,7 @@ def decodeData(data:Dict) -> str:
     enc = data['content']
     decodedBytes = base64.b64decode(enc)
     decodedStr = str(decodedBytes, "utf-8")
-    print("Decoded Content")
+    logging.info("Decoded Content")
     return decodedStr
 
 def sendTGMessage(message:str) -> str:
@@ -21,17 +22,26 @@ def sendTGMessage(message:str) -> str:
     msg_data = {'chat_id':chat_id,'text':message,"parse_mode":"Markdown"}
     resp = requests.post(url, msg_data).json()
     if resp['ok'] is False:
-        print("Message Not Send")
+        logging.info("Message Not Send")
     else:
-        print("Message Sent")
+        logging.error("Message Sent")
 
+def getNewPush(sha:str) -> str:
+    data = requests.get(f'https://api.github.com/repos/infincek/gatsby-site/commits/{sha}').json()
+    for item in data['files']:
+        if "pdf" in item['raw_url']:
+            msg = f"New PDF Uploaded\n\n{item['raw_url'])}"
+            sendTGMessage(msg)
+            logging.info("File Update Sent")
+        else:
+            return None
 
 def getAnnouncements() -> str:
     try:
         data = requests.get("https://api.github.com/repos/infincek/gatsby-site/contents/data/front-page-data/Announcements.yml").json()
     except ValueError:
         return "No Data Received"
-    print("Acquired FrontPage Data")
+    logging.info("Acquired FrontPage Data")
     yaml_data = yaml.load(decodeData(data),Loader=yaml.FullLoader)
     date = yaml_data[0]['date'].strftime("%d/%m/%Y")
     return f"**Date** :\t{date}\n\n**Announcement** : \t{yaml_data[0]['data']}"
@@ -41,7 +51,7 @@ def makeResponse(bd:Dict,pr_num:int) -> str:
     flname = pr_file[0]['filename']
     if "Announcement" in flname:
         resp = getAnnouncements()
-        print("Announcements Found")
+        logging.info("Announcements Found")
     else:
         return "Announcements not Found"
     sendTGMessage(resp)
@@ -54,9 +64,14 @@ async def getResponse(request:Request):
     except ValueError:
         return "Data Not Received"
     try:
-        if req_data['pull_request']['merged'] == "true":
+        if req_data['pull_request']['merged'] is True:
            makeResponse(req_data,req_data['number'])
+        elif req_data['pusher']['name'] != "": 
+            if req_data['deleted'] is True:
+                return "PR Is Deleted"
+            else:
+                getNewPush(req_data['after'])
     except KeyError:
-        return "Merge Key not found, Not a PR Merge ßHook"
+        return "Merge Key not found, Not a PR Merge Hook"
     else:
         return "Not Found"
