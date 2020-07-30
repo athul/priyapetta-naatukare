@@ -30,7 +30,7 @@ def getNewPush(sha:str) -> str:
     data = requests.get(f'https://api.github.com/repos/infincek/gatsby-site/commits/{sha}').json()
     for item in data['files']:
         if "pdf" in item['raw_url']:
-            msg = f"New PDF Uploaded\n\n{item['raw_url'])}"
+            msg = f"New PDF Uploaded\n\n{item['raw_url']}"
             sendTGMessage(msg)
             logging.info("File Update Sent")
         else:
