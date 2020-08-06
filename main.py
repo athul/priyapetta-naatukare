@@ -27,18 +27,18 @@ async def sendTGMessage(message:str) -> str:
     else:
         logging.info("👉    Message Sent")
 
-def getNewPush(sha:str) -> str:
+async def getNewPush(sha:str) -> str:
     data = requests.get(f'https://api.github.com/repos/infincek/gatsby-site/commits/{sha}').json()
     today = date.today().strftime("%d/%m/%Y")
     for item in data['files']:
         if ".pdf" in item['raw_url']:
             msg = f"**Date**:\t{today}\n\nNew PDF Uploaded\n\n[Find the File Here]({item['raw_url']})"
-            sendTGMessage(msg)
+            await sendTGMessage(msg)
             logging.info("👉    PDF Update Sent")
             return "PDF Update Sent"
         elif ".jpg" or ".jpeg" or ".png" in item['raw_url']:
             msg = f"**Date**:\t{today}\n\nNew File Uploaded\n\n[Download]({item['raw_url']})"
-            sendTGMessage(msg)
+            await sendTGMessage(msg)
             logging.info("👉    Image update Sent")
             return "Image update Sent"
         else:
@@ -95,7 +95,7 @@ async def getPushes(request:Request):
         return "Data Not Received"
     finally:
         try:
-            getNewPush(req_data['after'])
+            await getNewPush(req_data['after'])
             return "Push Hook is Processed and Will be done"
         except KeyError:
             return "Not Valid Push Data"
