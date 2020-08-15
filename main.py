@@ -36,11 +36,6 @@ async def getNewPush(sha:str) -> str:
             await sendTGMessage(msg)
             logging.info("👉    PDF Update Sent")
             return "PDF Update Sent"
-        elif ".jpg" or ".jpeg" or ".png" in item['raw_url']:
-            msg = f"**Date**:\t{today}\n\nNew File Uploaded\n\n[Download]({item['raw_url']})"
-            await sendTGMessage(msg)
-            logging.info("👉    Image update Sent")
-            return "Image update Sent"
         else:
             return None
 
